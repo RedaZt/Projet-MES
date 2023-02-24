@@ -30,5 +30,9 @@ class Johnson:
 #     [5, 2, 3, 6, 7],
 #     [2, 4, 4, 5, 3]
 # ]
+# machines = [
+#     [8, 11, 5, 9],
+#     [7, 16, 10, 8]
+# ]
 # exemple = Johnson(machines)
 # print(" -> ".join(f"J{x + 1}" for x in exemple.order))

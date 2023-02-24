@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from algorithms.Johnson import Johnson
+from algorithms.Td2H1 import Td2H1
 from pprint import pprint
 
 
@@ -18,27 +19,28 @@ class Window(QtWidgets.QWidget):
         self.fillTableWithZeros(self.mainTable)
         self.textbox = QtWidgets.QLineEdit()
 
-        # self.buttonAddRow = QtWidgets.QPushButton('Add a line', self)
-        # self.buttonRemoveRow = QtWidgets.QPushButton('Delete a line', self)
+        self.buttonAddRow = QtWidgets.QPushButton('Add a line', self)
+        self.buttonRemoveRow = QtWidgets.QPushButton('Delete a line', self)
         self.buttonAddColumn = QtWidgets.QPushButton("Add a Column", self)
         self.buttonRemoveColumn = QtWidgets.QPushButton("Delete a Column", self)
         self.buttonSolve = QtWidgets.QPushButton("Solve", self)
 
         self.layout = QtWidgets.QGridLayout(self)
-        # self.layout.addWidget(self.buttonAddRow, 0, 0, 1, 2)
-        # self.layout.addWidget(self.buttonRemoveRow, 0, 2, 1, 2)
-        # self.layout.addWidget(self.buttonAddColumn, 0, 4, 1, 2)
-        # self.layout.addWidget(self.buttonRemoveColumn, 0, 6, 1, 2)
-        self.layout.addWidget(self.buttonAddColumn, 0, 0, 1, 4)
-        self.layout.addWidget(self.buttonRemoveColumn, 0, 4, 1, 4)
+        self.layout.addWidget(self.buttonAddRow, 0, 0, 1, 2)
+        self.layout.addWidget(self.buttonRemoveRow, 0, 2, 1, 2)
+        self.layout.addWidget(self.buttonAddColumn, 0, 4, 1, 2)
+        self.layout.addWidget(self.buttonRemoveColumn, 0, 6, 1, 2)
+        # self.layout.addWidget(self.buttonAddColumn, 0, 0, 1, 4)
+        # self.layout.addWidget(self.buttonRemoveColumn, 0, 4, 1, 4)
         self.layout.addWidget(self.mainTable, 1, 0, 3, 8)
         self.layout.addWidget(self.buttonSolve, 4, 0, 1, 8)
 
-        # self.buttonAddRow.clicked.connect(self.addRow)
-        # self.buttonRemoveRow.clicked.connect(self.removeRow)
+        self.buttonAddRow.clicked.connect(self.addRow)
+        self.buttonRemoveRow.clicked.connect(self.removeRow)
         self.buttonAddColumn.clicked.connect(self.addColumn)
         self.buttonRemoveColumn.clicked.connect(self.removeColumn)
-        self.buttonSolve.clicked.connect(lambda: self.solve(Johnson))
+        # self.buttonSolve.clicked.connect(lambda: self.solve(Johnson))
+        self.buttonSolve.clicked.connect(lambda: self.solve(Td2H1))
 
     def addRow(self):
         self.mainTable.insertRow(self.mainTable.rowCount())
@@ -102,10 +104,11 @@ class Window(QtWidgets.QWidget):
         )
 
     def readInputs(self, table):
+        nRows = table.rowCount()
         nColumns = table.columnCount()
         machines = []
 
-        for row in range(2):
+        for row in range(nRows):
             d = []
             for col in range(nColumns):
                 item = table.item(row, col)
@@ -122,15 +125,23 @@ class Window(QtWidgets.QWidget):
     def printResults(self):
         nRows = self.mainTable.rowCount()
         nColumns = self.mainTable.columnCount()
+        print(nRows, nColumns)
 
         self.resTable = QtWidgets.QTableWidget(nRows, nColumns, self)
         machines = self.readInputs(self.mainTable)
+        # machines = [
+        #     [4, 3, 5, 2, 7, 3, 6, 7, 5],
+        #     [8, 5, 2, 4, 3, 7, 6, 8, 9],
+        #     [3, 7, 4, 7, 5, 6, 6, 8, 3],
+        # ]
         order = self.solution.order
         res = []
+        print(order)
 
         for machine in machines:
             d = [machine[order[i]] for i in range(len(order))]
             res += d
+        print(len(res))
 
         for row in range(nRows):
             for col in range(nColumns):
@@ -157,17 +168,17 @@ class Window(QtWidgets.QWidget):
             "tab:olive",
             "tab:cyan",
         ]
-        ncolumns = self.mainTable.columnCount()
+        nColumns = self.mainTable.columnCount()
         machines = [*self.readInputs(self.resTable)]
         results = []
 
         for i in range(len(machines)):
             result = []
             if i == 0:
-                for j in range(ncolumns):
+                for j in range(nColumns):
                     result += ((self.calculateM1(j), machines[i][j]),)
             else:
-                for j in range(ncolumns):
+                for j in range(nColumns):
                     result += ((self.calculateM2(i, j), machines[i][j]),)
             results += (result,)
 
@@ -242,12 +253,21 @@ class Window(QtWidgets.QWidget):
 
     def calculateM2(self, i, j):
         if j == 0:
-            return int(self.resTable.item(i - 1, 0).text())
+            if i == 1:
+                return int(self.resTable.item(i - 1, 0).text())
+            else:
+                return self.calculateM2(i - 1, 0) + int(self.resTable.item(i - 1, 0).text())
         else:
-            return max(
-                self.calculateM1(j) + int(self.resTable.item(0, j).text()),
-                self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
-            )
+            if i == 1:
+                return max(
+                    self.calculateM1(j) + int(self.resTable.item(0, j).text()),
+                    self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
+                )
+            else:
+                return max(
+                    self.calculateM2(i - 1, j) + int(self.resTable.item(i - 1, j).text()),
+                    self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
+                )
 
 
 if __name__ == "__main__":
