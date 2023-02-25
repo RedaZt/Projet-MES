@@ -270,6 +270,32 @@ class Window(QtWidgets.QWidget):
                 )
 
 
+    # def calculateM1(self, i):
+    #     if i == 0:
+    #         return 0
+    #     else:
+    #         return int(self.resTable.item(0, i - 1).text()) + self.calculateM1(i - 1)
+
+
+    # def calculateM2(self, i, j):
+    #     if j == 0:
+    #         if i == 1:
+    #             return int(self.resTable.item(i - 1, 0).text())
+    #         else:
+    #             return self.calculateM2(i - 1, 0) + int(self.resTable.item(i - 1, 0).text())
+    #     else:
+    #         if i == 1:
+    #             return max(
+    #                 self.calculateM1(j) + int(self.resTable.item(0, j).text()),
+    #                 self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
+    #             )
+    #         else:
+    #             return max(
+    #                 self.calculateM2(i - 1, j) + int(self.resTable.item(i - 1, j).text()),
+    #                 self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
+    #             )
+
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = Window()
