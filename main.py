@@ -1,97 +1,132 @@
 import sys
-from PyQt5 import QtWidgets, QtCore, QtPrintSupport, QtGui
-from PyQt5.QtWidgets import QDialog, QApplication, QPushButton, QVBoxLayout, QTabWidget
+from PyQt5 import QtCore, QtPrintSupport, QtGui
+from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from algorithms.Johnson import Johnson
-from algorithms.Td2H1 import Td2H1
-from pprint import pprint
+from lib.utils import calculateM
+from lib.Johnson import Johnson
+from lib.CDS import CDS
+from lib.Td2H1 import Td2H1
+from lib.Td2H2 import Td2H2
+from lib.Td2H3 import Td2H3
 
+class Window(QWidget):
 
-class Window(QtWidgets.QWidget):
     def __init__(self):
-        QtWidgets.QWidget.__init__(self)
-        self.setWindowTitle(self.tr("MES Project By Reda Zitouni"))
+        super().__init__()
+        self.initUI()
+        self.stackedWidget.currentChanged.connect(self.SetButtonState)
+        self.next_button.clicked.connect(self.gotoNextPage)
+        self.prev_button.clicked.connect(self.gotoPrevPage)
 
-        self.mainTable = QtWidgets.QTableWidget(2, 4, self)
-        self.setHeadersForMainTable()
+
+    def initUI(self):
+        self.next_button = QPushButton('Next')
+        self.prev_button = QPushButton('Previous')
+        self.next_button.setEnabled(False)
+        self.prev_button.setEnabled(False)
+        self.stackedWidget = QStackedWidget()
+
+        hbox = QHBoxLayout()
+        hbox.addStretch(1)
+        hbox.addWidget(self.prev_button)
+        hbox.addWidget(self.next_button)
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.stackedWidget)
+        vbox.addLayout(hbox)
+        self.page1()
+
+        self.setLayout(vbox)
+
+
+    def page1(self):
+        self.testWindow = QWidget()
+        self.firstPageGrid = QGridLayout(self)
+
+        self.mainTable = QTableWidget(2, 4, self)
         self.fillTableWithZeros(self.mainTable)
-        self.textbox = QtWidgets.QLineEdit()
+        self.setHeaders(self.mainTable)
 
-        self.buttonAddRow = QtWidgets.QPushButton('Add a line', self)
-        self.buttonRemoveRow = QtWidgets.QPushButton('Delete a line', self)
-        self.buttonAddColumn = QtWidgets.QPushButton("Add a Column", self)
-        self.buttonRemoveColumn = QtWidgets.QPushButton("Delete a Column", self)
-        self.buttonSolve = QtWidgets.QPushButton("Solve", self)
+        self.buttonAddRow = QPushButton("Add a line", self)
+        self.buttonRemoveRow = QPushButton("Delete a line", self)
+        self.buttonAddColumn = QPushButton("Add a Column", self)
+        self.buttonRemoveColumn = QPushButton("Delete a Column", self)
 
-        self.layout = QtWidgets.QGridLayout(self)
-        self.layout.addWidget(self.buttonAddRow, 0, 0, 1, 2)
-        self.layout.addWidget(self.buttonRemoveRow, 0, 2, 1, 2)
-        self.layout.addWidget(self.buttonAddColumn, 0, 4, 1, 2)
-        self.layout.addWidget(self.buttonRemoveColumn, 0, 6, 1, 2)
-        # self.layout.addWidget(self.buttonAddColumn, 0, 0, 1, 4)
-        # self.layout.addWidget(self.buttonRemoveColumn, 0, 4, 1, 4)
-        self.layout.addWidget(self.mainTable, 1, 0, 3, 8)
-        self.layout.addWidget(self.buttonSolve, 4, 0, 1, 8)
+        self.delayCheckbox = QCheckBox("Deadlines", self)
+        # self.preparationCheckbox = QCheckBox("Preparation", self)
+
+        self.dropdownMenu = QComboBox()
+        self.dropdownMenu.addItem("CDS")
+        # self.dropdownMenu.addItem("Td2H1") 
+
+        self.buttonSolve = QPushButton("Solve", self)
+
+        self.testWindow.setLayout(self.firstPageGrid)
+
+        self.firstPageGrid.addWidget(self.buttonAddRow, 0, 0, 1, 2)
+        self.firstPageGrid.addWidget(self.buttonRemoveRow, 0, 2, 1, 2)
+        self.firstPageGrid.addWidget(self.buttonAddColumn, 0, 4, 1, 2)
+        self.firstPageGrid.addWidget(self.buttonRemoveColumn, 0, 6, 1, 2)
+        self.firstPageGrid.addWidget(self.mainTable, 1, 0, 3, 8)
+        self.firstPageGrid.addWidget(self.delayCheckbox, 4, 0, 1, 8)
+        # self.firstPageGrid.addWidget(self.preparationCheckbox, 6, 0, 1, 8)
+        self.firstPageGrid.addWidget(self.dropdownMenu, 8, 0, 1, 4)
+        self.firstPageGrid.addWidget(self.buttonSolve, 8, 4, 1, 4)
 
         self.buttonAddRow.clicked.connect(self.addRow)
         self.buttonRemoveRow.clicked.connect(self.removeRow)
         self.buttonAddColumn.clicked.connect(self.addColumn)
         self.buttonRemoveColumn.clicked.connect(self.removeColumn)
-        # self.buttonSolve.clicked.connect(lambda: self.solve(Johnson))
-        self.buttonSolve.clicked.connect(lambda: self.solve(Td2H1))
+        self.delayCheckbox.stateChanged.connect(self.toggleDelayTable)
+        # self.preparationCheckbox.stateChanged.connect(self.togglePreparationTable)
+        self.buttonSolve.clicked.connect(self.solve)
+
+        self.stackedWidget.insertWidget(0, self.testWindow)
+
 
     def addRow(self):
         self.mainTable.insertRow(self.mainTable.rowCount())
         for col in range(self.mainTable.columnCount()):
-            item = QtWidgets.QTableWidgetItem('0')
+            item = QTableWidgetItem('0')
             item.setTextAlignment(QtCore.Qt.AlignCenter)
             self.mainTable.setItem(self.mainTable.rowCount() - 1, col, item)
-        self.setHeadersForMainTable()
+        self.setHeaders(self.mainTable)
+
 
     def removeRow(self):
         if self.mainTable.rowCount() > 0:
             self.mainTable.removeRow(self.mainTable.rowCount() - 1)
-        self.setHeadersForMainTable()
+        self.setHeaders(self.mainTable)
+
 
     def addColumn(self):
         self.mainTable.insertColumn(self.mainTable.columnCount())
         for row in range(self.mainTable.rowCount()):
-            item = QtWidgets.QTableWidgetItem('0')
+            item = QTableWidgetItem('0')
             item.setTextAlignment(QtCore.Qt.AlignCenter)
             self.mainTable.setItem(row, self.mainTable.columnCount() - 1, item)
-        self.setHeadersForMainTable()
+        self.setHeaders(self.mainTable)
+
 
     def removeColumn(self):
         if self.mainTable.columnCount() > 0:
             self.mainTable.removeColumn(self.mainTable.columnCount() - 1)
-        self.setHeadersForMainTable()
+        self.setHeaders(self.mainTable)
 
+    
     def fillTableWithZeros(self, table):
         for row in range(table.rowCount()):
             for col in range(table.columnCount()):
-                item = QtWidgets.QTableWidgetItem("0")
+                item = QTableWidgetItem("0")
                 item.setTextAlignment(QtCore.Qt.AlignCenter)
                 table.setItem(row, col, item)
 
-    def setHeadersForMainTable(self):
-        columnsHeaders = "|".join(
-            f"J{column+1}" for column in range(self.mainTable.columnCount())
-        )
-        rowsHeaders = "|".join(
-            f"M{row+1}" for row in range(self.mainTable.rowCount())
-        )
-        self.mainTable.setHorizontalHeaderLabels(
-            columnsHeaders.split("|")
-        )
-        self.mainTable.setVerticalHeaderLabels(
-            rowsHeaders.split("|")
-        )
 
-    def setHeaders(self, table, order):
+    def setHeaders(self, table):
         columnsHeaders = "|".join(
-            f"J{order[column]+1}" for column in range(table.columnCount())
+            f"J{column+1}" for column in range(table.columnCount())
         )
         rowsHeaders = "|".join(
             f"M{row+1}" for row in range(table.rowCount())
@@ -103,6 +138,7 @@ class Window(QtWidgets.QWidget):
             rowsHeaders.split("|")
         )
 
+
     def readInputs(self, table):
         nRows = table.rowCount()
         nColumns = table.columnCount()
@@ -113,48 +149,69 @@ class Window(QtWidgets.QWidget):
             for col in range(nColumns):
                 item = table.item(row, col)
                 d += (int(item.text()),)
-            machines += (d,)
+            if nRows == 1:
+                machines = d
+            else:
+                machines += (d,)
 
         return machines
 
-    def solve(self, cls):
+
+    # def solve(self, cls):
+    #     machines = self.readInputs(self.mainTable)
+    #     self.solution = cls(machines)
+    #     self.printResults()
+    def solve(self):
+        chosenMethod = self.dropdownMenu.currentIndex()
         machines = self.readInputs(self.mainTable)
-        self.solution = cls(machines)
+
+        if chosenMethod == 0:
+            self.solution = CDS(machines)
+            # self.solution = Td2H1(machines)
+        else:
+            # try:
+            #     deadlines = self.readInputs(self.delayTable)
+            # except:
+            #     deadlines = [1 for i in range(self.mainTable.columnCount())]
+            deadlines = self.readInputs(self.delayTable)
+
+            if chosenMethod == 1:
+                self.solution = Td2H2(deadlines)   
+            elif chosenMethod == 2:
+                self.solution = Td2H3(machines, deadlines)   
+
         self.printResults()
+
 
     def printResults(self):
         nRows = self.mainTable.rowCount()
         nColumns = self.mainTable.columnCount()
-        print(nRows, nColumns)
-
-        self.resTable = QtWidgets.QTableWidget(nRows, nColumns, self)
         machines = self.readInputs(self.mainTable)
-        # machines = [
-        #     [4, 3, 5, 2, 7, 3, 6, 7, 5],
-        #     [8, 5, 2, 4, 3, 7, 6, 8, 9],
-        #     [3, 7, 4, 7, 5, 6, 6, 8, 3],
-        # ]
-        order = self.solution.order
-        res = []
-        print(order)
 
-        for machine in machines:
-            d = [machine[order[i]] for i in range(len(order))]
-            res += d
-        print(len(res))
+        # self.resTable = QTableWidget(nRows, nColumns, self)
+        # order = self.solution.order
+        # res = []
 
-        for row in range(nRows):
-            for col in range(nColumns):
-                item = QtWidgets.QTableWidgetItem(str(res[row * nColumns + col]))
-                item.setTextAlignment(QtCore.Qt.AlignCenter)
-                self.resTable.setItem(row, col, item)
-        self.setHeaders(self.resTable, order)
-        self.buttonShowchart = QtWidgets.QPushButton("Draw Chart", self)
+        # for machine in machines:
+        #     d = [machine[order[i]] for i in range(len(order))]
+        #     res += d
 
-        self.layout.addWidget(self.resTable, 5, 0, 3, 8)
-        self.layout.addWidget(self.buttonShowchart, 8, 0, 1, 8)
-        self.buttonShowchart.clicked.connect(self.drawChart)
+        # for row in range(nRows):
+        #     for col in range(nColumns):
+        #         item = QTableWidgetItem(str(res[row * nColumns + col]))
+        #         item.setTextAlignment(QtCore.Qt.AlignCenter)
+        #         self.resTable.setItem(row, col, item)
 
+        self.orderedMachines = []
+        for i in range(nRows):
+            lst = []
+            for j in self.solution.order:
+                lst += machines[i][j],
+            self.orderedMachines += lst,
+
+        self.drawChart()
+
+    
     def drawChart(self):
         tabColors = [
             "tab:blue",
@@ -169,17 +226,15 @@ class Window(QtWidgets.QWidget):
             "tab:cyan",
         ]
         nColumns = self.mainTable.columnCount()
-        machines = [*self.readInputs(self.resTable)]
+        nRows = self.mainTable.rowCount()
+        # machines = [*self.readInputs(self.resTable)]
         results = []
 
-        for i in range(len(machines)):
+        for i in range(nRows):
             result = []
-            if i == 0:
-                for j in range(nColumns):
-                    result += ((self.calculateM1(j), machines[i][j]),)
-            else:
-                for j in range(nColumns):
-                    result += ((self.calculateM2(i, j), machines[i][j]),)
+            for j in range(nColumns):
+                result += ((calculateM(self.orderedMachines, i, j), self.orderedMachines[i][j]),)
+                # result += ((self.calculateM(self.orderedMachines, i, j), self.orderedMachines[i][j]),)
             results += (result,)
 
         # Set the figure size
@@ -196,7 +251,7 @@ class Window(QtWidgets.QWidget):
             self.ax.broken_barh(result, (startIndex, 9), facecolors=color, edgecolor="black")
             
             self.ax.text(
-                x = -1, 
+                x = -1.5, 
                 y = startIndex + 4.5,
                 s = f"M{len(results) - index}", 
                 ha = "center", 
@@ -225,80 +280,124 @@ class Window(QtWidgets.QWidget):
         # Show the plot
         # plt.show()
 
-        self.oTabWidget = QtWidgets.QTabWidget()
-        self.chartWindow = QtWidgets.QWidget()
-        self.chartLayout = QtWidgets.QGridLayout()
-        # setting this layout to the widget
+        self.chartWindow = QWidget()
+        self.chartLayout = QGridLayout()
+        
         self.chartWindow.setLayout(self.chartLayout)
-        # this is the Canvas Widget that
-        # displays the 'figure'it takes the
-        # 'figure' instance as a parameter to __init__
+
         self.canvas = FigureCanvas(self.figure)
-        # this is the Navigation widget
-        # it takes the Canvas widget and a parent
         self.toolbar = NavigationToolbar(self.canvas, self)
+
+        cMax = results[-1][-1][0] + results[-1][-1][1]
+        sequence = ", ".join(f"J{x + 1}" for x in self.solution.order)
+        firstButtonText = f"Cmax = {cMax}" 
+        secondButtonText = f"σ = [{sequence}]"
+        self.cMax = QPushButton(firstButtonText, self)
+        self.sequence = QPushButton(secondButtonText, self)
 
         self.chartLayout.addWidget(self.toolbar)
         self.chartLayout.addWidget(self.canvas)
+        self.chartLayout.addWidget(self.cMax)
+        self.chartLayout.addWidget(self.sequence)
 
-        self.chartWindow.setWindowTitle("Graph")
-        self.chartWindow.resize(600, 400)
-        self.chartWindow.show()
-
-    def calculateM1(self, i):
-        if i == 0:
-            return 0
-        else:
-            return int(self.resTable.item(0, i - 1).text()) + self.calculateM1(i - 1)
-
-    def calculateM2(self, i, j):
-        if j == 0:
-            if i == 1:
-                return int(self.resTable.item(i - 1, 0).text())
-            else:
-                return self.calculateM2(i - 1, 0) + int(self.resTable.item(i - 1, 0).text())
-        else:
-            if i == 1:
-                return max(
-                    self.calculateM1(j) + int(self.resTable.item(0, j).text()),
-                    self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
-                )
-            else:
-                return max(
-                    self.calculateM2(i - 1, j) + int(self.resTable.item(i - 1, j).text()),
-                    self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
-                )
+        self.insertPage(self.chartWindow, 1)
+        self.stackedWidget.setCurrentIndex(1)
 
 
-    # def calculateM1(self, i):
-    #     if i == 0:
-    #         return 0
-    #     else:
-    #         return int(self.resTable.item(0, i - 1).text()) + self.calculateM1(i - 1)
-
-
-    # def calculateM2(self, i, j):
+    # def calculateM(self, i, j):
     #     if j == 0:
-    #         if i == 1:
-    #             return int(self.resTable.item(i - 1, 0).text())
-    #         else:
-    #             return self.calculateM2(i - 1, 0) + int(self.resTable.item(i - 1, 0).text())
+    #         if i == 0:
+    #             return 0
+    #         return self.calculateM(i - 1, 0) + int(self.resTable.item(i - 1, 0).text())
     #     else:
-    #         if i == 1:
-    #             return max(
-    #                 self.calculateM1(j) + int(self.resTable.item(0, j).text()),
-    #                 self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
-    #             )
-    #         else:
-    #             return max(
-    #                 self.calculateM2(i - 1, j) + int(self.resTable.item(i - 1, j).text()),
-    #                 self.calculateM2(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
-    #             )
+    #         if i == 0:
+    #             return int(self.resTable.item(i, j - 1).text()) + self.calculateM(i, j - 1)
+    #         return max(
+    #             self.calculateM(i - 1, j) + int(self.resTable.item(i - 1, j).text()),
+    #             self.calculateM(i, j - 1) + int(self.resTable.item(i, j - 1).text()),
+    #         )
+    
+
+    # def calculateM(self, machines, i, j):
+    #     if j == 0:
+    #         if i == 0:
+    #             return 0
+    #         return self.calculateM(machines, i - 1, 0) + machines[i - 1][0]
+    #     else:
+    #         if i == 0:
+    #             return machines[i][j - 1] + self.calculateM(machines, i, j - 1)
+    #         return max(
+    #             self.calculateM(machines, i - 1, j) + machines[i - 1][j],
+    #             self.calculateM(machines, i, j - 1) + machines[i][j - 1],
+    #         )
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    def toggleDelayTable(self):
+        # print(self.testCheckbox.checkState())
+        if self.delayCheckbox.isChecked():
+            self.dropdownMenu.addItems(["Td2H2", "Td2H3"])
+            nColumns = self.mainTable.columnCount()
+            self.delayTable = QTableWidget(1, nColumns, self)
+            self.fillTableWithZeros(self.delayTable)
+            columnsHeaders = '|'.join(
+                f"J{column+1}" for column in range(self.delayTable.columnCount())
+            )
+            self.delayTable.setHorizontalHeaderLabels(
+                columnsHeaders.split('|')
+            )
+            self.delayTable.setVerticalHeaderLabels(
+                ['']
+            )
+            self.firstPageGrid.addWidget(self.delayTable, 5, 0, 1, 8)
+        else:
+            for i in range(2):
+                self.dropdownMenu.removeItem(self.dropdownMenu.count() - 1)
+            self.firstPageGrid.removeWidget(self.delayTable)
+            self.delayTable.deleteLater()
+            # self.delayTable = None
+
+
+    # def togglePreparationTable(self):
+    #     if self.preparationCheckbox.isChecked():
+    #         self.preparationTable = QTableWidget(1, 4, self)
+    #         self.fillTableWithZeros(self.preparationTable)
+    #         self.firstPageGrid.addWidget(self.preparationTable, 7, 0, 1, 8)
+    #     else:
+    #         self.firstPageGrid.removeWidget(self.preparationTable)
+    #         self.preparationTable.deleteLater()
+    #         # self.preparationTable = None
+
+
+    def SetButtonState(self, index):
+        self.prev_button.setEnabled(index > 0)
+        nPages = len(self.stackedWidget)
+        self.next_button.setEnabled( index % nPages < nPages - 1)
+
+
+    def insertPage(self, widget, index=-1):
+        self.stackedWidget.insertWidget(index, widget)
+        self.SetButtonState(self.stackedWidget.currentIndex())
+
+
+    def gotoNextPage(self):
+        newIndex = self.stackedWidget.currentIndex() + 1
+        if newIndex < len(self.stackedWidget):
+            self.stackedWidget.setCurrentIndex(newIndex)
+
+
+    def gotoPrevPage(self):
+        newIndex = self.stackedWidget.currentIndex()-1
+        if newIndex >= 0:
+            self.stackedWidget.setCurrentIndex(newIndex)
+
+
+if __name__ == '__main__':
+
+    app = QApplication(sys.argv)
     window = Window()
-    window.resize(640, 480)
+    # for i in range(5):
+    #     window.insertPage(QLabel(f'This is page {i+1}'))
+    window.resize(960, 720)
     window.show()
-    sys.exit(app.exec_())
+    # app.exec()
+    sys.exit(app.exec())
