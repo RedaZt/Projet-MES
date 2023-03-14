@@ -8,9 +8,10 @@ class Johnson:
         ncells = len(m1)
         start, end = [], []
 
-        for i in range(ncells):
+        for _ in range(ncells):
             minM1 = min(m1)
             minM2 = min(m2)
+            maxValue = max(m1 + m2)
 
             if minM1 <= minM2:
                 indexMinM = m1.index(minM1)
@@ -19,8 +20,10 @@ class Johnson:
                 indexMinM = m2.index(minM2)
                 end += indexMinM,
             
-            m1[indexMinM] = m1[indexMinM] + 9**10
-            m2[indexMinM] = m2[indexMinM] + 9**10
+            # m1[indexMinM] = m1[indexMinM] + 9**10
+            # m2[indexMinM] = m2[indexMinM] + 9**10
+            m1[indexMinM] = m1[indexMinM] + maxValue + 1
+            m2[indexMinM] = m2[indexMinM] + maxValue + 1
 
         order = start + end[::-1]
 
