@@ -1,17 +1,19 @@
 from .Johnson import Johnson
-from .utils import calculateMakespan
+from .utils import calculateMakespan, calculateMakespanWithPreparation
+
 # from Johnson import Johnson
-# from utils import calculateMakespan
-import pprint
+# from utils import calculateMakespan, calculateMakespanWithPreparation
 
 class CDS:
-    def __init__(self, machines) -> None:
+    def __init__(self, machines, preparations) -> None:
         self.machines = machines
-        self.order = self.fun()
+        self.preparations = preparations
+        self.order = self.orderMachines()
 
-    def fun(self):
+    def orderMachines(self):
         nMachines = len(self.machines)
-        nJobs = len(self.machines[0]) 
+        nJobs = len(self.machines[0])
+
         d = {}
         for k in range(1, nMachines):
             fictitiousMachine1 = [0 for _ in range(nJobs)]
@@ -34,10 +36,6 @@ class CDS:
                 orderedMachines += orderedJobs,
             cmax = calculateMakespan(orderedMachines, nMachines - 1, nJobs - 1) + orderedMachines[-1][-1]
             d[cmax] = solution.order
-            # print(cmax, solution.order)
-        #     print(cmax)
-        #     print("---------")
-        # pprint.pprint(d)
         return d[min(d.keys())]
 
 
@@ -71,5 +69,38 @@ class CDS:
 #     [2, 8, 3, 7],
 #     [8, 5, 7, 2],
 # ]
-# example = CDS(machines)
-# print(example.order)
+
+# machines = [
+#     [5, 5, 3, 6, 7],
+#     [2, 4, 5, 5, 3],
+#     [3, 2, 5, 4, 2],
+# ]
+
+# preparations = [
+#     [
+#         [2, 2, 3, 2, 1],
+#         [2, 3, 2, 3, 3],
+#         [3, 2, 3, 4, 2],
+#         [1, 3, 2, 3, 2],
+#         [3, 4, 2, 3, 1],
+#     ],
+#     [
+#         [3, 1, 3, 2, 1],
+#         [3, 3, 2, 3, 3],
+#         [3, 2, 3, 4, 2],
+#         [2, 1, 2, 4, 2],
+#         [2, 3, 2, 3, 2],
+#     ],
+#     [
+#         [2, 3, 1, 2, 3],
+#         [1, 2, 3, 3, 3],
+#         [4, 3, 2, 3, 1],
+#         [3, 2, 2, 1, 2],
+#         [3, 2, 3, 4, 2],
+#     ],
+# ]
+
+# preparations = [[0 for j in range(len(machines[0]))] for i in range(len(machines[0]))]
+
+# example = CDS(machines, preparations)
+# print(" -> ".join(f"J{x + 1}" for x in example.order))

@@ -55,6 +55,35 @@ class Td2H3:
             results[indexMax] = -1
 
         return order
+    
+
+class TPj:
+    def __init__(self, machines, preparations) -> None:
+        self.machines = machines
+        self.preparations = preparations
+        self.order = self.orderMachinesByTPj()
+    
+
+    def orderMachinesByTPj(self):
+        nMachines = len(self.machines)
+        nJobs = len(self.machines[0])
+        results = [sum(self.machines[j][i] + self.preparations[j][i][i] for j in range(nMachines)) for i in range(nJobs)]        
+        
+        order = []
+        for i in range(nJobs):
+            indexMax = results.index(max(results))
+            order += indexMax,
+            results[indexMax] = 0
+        
+        return order
+
+
+class CustomSort:
+    def __init__(self, machines, preparations, order) -> None:
+        self.machines = machines
+        self.preparations = preparations
+        self.order = order
+
 
 # machines = [
 #     [4, 3, 5, 2, 7, 3, 6, 7, 5],

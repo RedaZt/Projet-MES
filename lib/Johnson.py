@@ -5,6 +5,8 @@ class Johnson:
 
     def johnson(self):
         m1, m2 = self.machines
+        *m1, = m1
+        *m2, = m2
         ncells = len(m1)
         start, end = [], []
 
@@ -20,13 +22,10 @@ class Johnson:
                 indexMinM = m2.index(minM2)
                 end += indexMinM,
             
-            # m1[indexMinM] = m1[indexMinM] + 9**10
-            # m2[indexMinM] = m2[indexMinM] + 9**10
             m1[indexMinM] = m1[indexMinM] + maxValue + 1
             m2[indexMinM] = m2[indexMinM] + maxValue + 1
 
         order = start + end[::-1]
-
         return order
 
 # machines = [
@@ -37,5 +36,11 @@ class Johnson:
 #     [8, 11, 5, 9],
 #     [7, 16, 10, 8]
 # ]
+# machines = [
+#     [3, 5, 1, 6, 7],
+#     [6, 2, 2, 6, 5]
+# ]
 # example = Johnson(machines)
+# print("Order: ", end='')
 # print(" -> ".join(f"J{x + 1}" for x in example.order))
+# print(example.machines)
